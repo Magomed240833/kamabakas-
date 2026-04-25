@@ -271,10 +271,10 @@ history.innerHTML=""
 let leaderboard={}
 let total=0
 
-snapshot.forEach(document=>{
+snapshot.forEach(docSnap=>{
 
-let data=document.data()
-let id=document.id
+let data=docSnap.data()
+let id=docSnap.id
 
 if(data.status==="confirmed"){
 
