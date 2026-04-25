@@ -1,22 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Kamabaka Crew Bank</title>
 
 <style>
-
 body{
-font-family:Arial;
+font-family: Arial;
 background:#0f172a;
 color:white;
 margin:40px;
 }
 
-.container{
-max-width:1100px;
-margin:auto;
-}
+.container{max-width:1100px;margin:auto;}
 
 .card{
 background:#1e293b;
@@ -32,10 +28,7 @@ border-radius:6px;
 border:none;
 }
 
-button{
-background:#38bdf8;
-cursor:pointer;
-}
+button{background:#38bdf8;cursor:pointer;}
 
 table{
 width:100%;
@@ -47,10 +40,19 @@ padding:10px;
 border-bottom:1px solid #334155;
 }
 
+.flex{display:flex;gap:20px;}
+.half{flex:1;}
+
+.metric{
+font-size:40px;
+text-align:center;
+font-weight:bold;
+}
+
 .progressbar{
 background:#334155;
-height:25px;
-border-radius:20px;
+height:20px;
+border-radius:10px;
 overflow:hidden;
 }
 
@@ -59,24 +61,7 @@ background:#22c55e;
 height:100%;
 width:0%;
 }
-
-.flex{
-display:flex;
-gap:20px;
-}
-
-.half{
-flex:1;
-}
-
-.metric{
-font-size:40px;
-font-weight:bold;
-text-align:center;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -86,24 +71,16 @@ text-align:center;
 <h1>🏴‍☠️ Kamabaka Crew Bank</h1>
 
 <div class="card">
-
-<h2>Captain Panel</h2>
-
-<input type="password" id="captainPassword" placeholder="Captain password">
-
-<button onclick="loginCaptain()">Login</button>
-
-<p id="captainStatus">Not logged in</p>
-
+<h3>Captain Login</h3>
+<input type="password" id="pass" placeholder="Captain password">
+<button onclick="login()">Login</button>
+<p id="status">Not logged in</p>
 </div>
 
 <div class="card">
-
-<h2>Goal</h2>
-
+<h3>Goal</h3>
 <input id="goalName" placeholder="Goal name">
 <input id="goalAmount" type="number" placeholder="Goal amount">
-
 <button onclick="setGoal()">Set Goal</button>
 
 <p id="goalText"></p>
@@ -111,254 +88,186 @@ text-align:center;
 <div class="progressbar">
 <div class="progress" id="progress"></div>
 </div>
-
 </div>
 
 <div class="card">
-
-<h2>Add Contribution</h2>
-
-<input id="name" placeholder="Crew member name">
+<h3>Add Contribution</h3>
+<input id="name" placeholder="Name">
 <input id="amount" type="number" placeholder="Amount">
-
 <button onclick="addContribution()">Submit</button>
-
 </div>
 
 <div class="flex">
 
 <div class="card half">
-<h2>Total Crew Bank</h2>
-<div class="metric" id="total">0 Berries</div>
+<h2>Total Bank</h2>
+<div class="metric" id="total">0</div>
 </div>
 
 <div class="card half">
-
-<h2>Crew Leaderboard</h2>
-
+<h2>Leaderboard</h2>
 <table>
 <thead>
-<tr>
-<th>Player</th>
-<th>Total</th>
-</tr>
+<tr><th>Name</th><th>Total</th></tr>
 </thead>
-
-<tbody id="leaderboard"></tbody>
-
+<tbody id="board"></tbody>
 </table>
-
 </div>
 
 </div>
 
 <div class="card">
-
-<h2>Contribution History</h2>
-
+<h3>History</h3>
 <table>
-
 <thead>
 <tr>
 <th>Name</th>
 <th>Amount</th>
-<th>Date</th>
 <th>Status</th>
+<th>Date</th>
 <th>Action</th>
 </tr>
 </thead>
-
 <tbody id="history"></tbody>
-
 </table>
-
 </div>
 
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc } 
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "YOUR_KEY",
-authDomain: "YOUR_PROJECT.firebaseapp.com",
-projectId: "YOUR_PROJECT",
-storageBucket: "YOUR_PROJECT.appspot.com",
-messagingSenderId: "XXXX",
-appId: "XXXX"
+  apiKey: "AIzaSyAkKD8yTdyhExoccE_p9slB2enZ-AW23-Y",
+  authDomain: "kamabaka-bank.firebaseapp.com",
+  projectId: "kamabaka-bank",
+  storageBucket: "kamabaka-bank.firebasestorage.app",
+  messagingSenderId: "880622846664",
+  appId: "1:880622846664:web:f8da8e3571a29ce2ccdbfd",
+  measurementId: "G-G91DJ0GKGT"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let captain=false
+let captain = false;
+let total = 0;
+let goal = 0;
 
-window.loginCaptain=function(){
-
-const password=document.getElementById("captainPassword").value
-
-if(password==="Fgabriel"){
-captain=true
-document.getElementById("captainStatus").innerText="Captain logged in"
+// CAPTAIN LOGIN
+window.login = function(){
+const pass = document.getElementById("pass").value;
+if(pass === "Fgabriel"){
+captain = true;
+document.getElementById("status").innerText = "Captain logged in";
 }else{
-alert("Wrong password")
+alert("Wrong password");
+}
 }
 
-}
+// ADD CONTRIBUTION
+window.addContribution = async function(){
+let name = document.getElementById("name").value;
+let amount = Number(document.getElementById("amount").value);
 
-window.addContribution=async function(){
-
-let name=document.getElementById("name").value
-let amount=Number(document.getElementById("amount").value)
-
-if(!name || !amount)return
+if(!name || !amount) return;
 
 await addDoc(collection(db,"contributions"),{
-
-name:name,
-amount:amount,
-date:new Date().toLocaleString(),
-status:"pending"
-
-})
-
+name,
+amount,
+status:"pending",
+date:new Date().toLocaleString()
+});
 }
 
-window.confirmContribution=async function(id){
-
-if(!captain)return alert("Captain only")
-
-await updateDoc(doc(db,"contributions",id),{
-status:"confirmed"
-})
-
-}
-
-window.cancelContribution=async function(id){
-
-if(!captain)return alert("Captain only")
-
-await updateDoc(doc(db,"contributions",id),{
-status:"cancelled"
-})
-
-}
-
-window.setGoal=async function(){
-
-if(!captain)return alert("Captain only")
-
-let name=document.getElementById("goalName").value
-let amount=Number(document.getElementById("goalAmount").value)
+// SET GOAL
+window.setGoal = async function(){
+if(!captain) return alert("Captain only");
 
 await setDoc(doc(db,"settings","goal"),{
-name:name,
-amount:amount
-})
-
+name:document.getElementById("goalName").value,
+amount:Number(document.getElementById("goalAmount").value)
+});
 }
 
-let currentTotal=0
-let currentGoal=0
+// CONTRIBUTIONS REALTIME
+onSnapshot(collection(db,"contributions"),(snap)=>{
 
-onSnapshot(collection(db,"contributions"),snapshot=>{
+let history = document.getElementById("history");
+let board = {};
+history.innerHTML="";
+total = 0;
 
-let history=document.getElementById("history")
-history.innerHTML=""
+snap.forEach(d=>{
+let data = d.data();
 
-let leaderboard={}
-let total=0
-
-snapshot.forEach(docSnap=>{
-
-let data=docSnap.data()
-let id=docSnap.id
-
-if(data.status==="confirmed"){
-
-total+=data.amount
-
-if(!leaderboard[data.name])leaderboard[data.name]=0
-leaderboard[data.name]+=data.amount
-
-}
-
-let row=document.createElement("tr")
-
-let actions=""
+let actions="";
 
 if(captain && data.status==="pending"){
-
 actions=`
-<button onclick="confirmContribution('${id}')">Confirm</button>
-<button onclick="cancelContribution('${id}')">Cancel</button>
-`
-
+<button onclick="confirm('${d.id}')">Confirm</button>
+<button onclick="cancel('${d.id}')">Cancel</button>
+`;
 }
 
-row.innerHTML=`
+if(data.status==="confirmed"){
+total += data.amount;
+board[data.name]=(board[data.name]||0)+data.amount;
+}
+
+history.innerHTML += `
+<tr>
 <td>${data.name}</td>
 <td>${data.amount}</td>
-<td>${data.date}</td>
 <td>${data.status}</td>
+<td>${data.date}</td>
 <td>${actions}</td>
-`
+</tr>`;
+});
 
-history.appendChild(row)
+document.getElementById("total").innerText = total;
 
-})
+let b=document.getElementById("board");
+b.innerHTML="";
 
-currentTotal=total
-
-document.getElementById("total").innerText=total+" Berries"
-
-let lb=document.getElementById("leaderboard")
-lb.innerHTML=""
-
-Object.entries(leaderboard)
+Object.entries(board)
 .sort((a,b)=>b[1]-a[1])
-.forEach(player=>{
+.forEach(p=>{
+b.innerHTML += `<tr><td>${p[0]}</td><td>${p[1]}</td></tr>`;
+});
 
-let row=document.createElement("tr")
+updateProgress();
+});
 
-row.innerHTML=`
-<td>${player[0]}</td>
-<td>${player[1]}</td>
-`
+// GOAL REALTIME
+onSnapshot(doc(db,"settings","goal"),(snap)=>{
+let data = snap.data();
+if(!data) return;
 
-lb.appendChild(row)
+goal = data.amount;
 
-})
+document.getElementById("goalText").innerText =
+data.name + " ("+data.amount+")";
 
-updateProgress()
-
-})
-
-onSnapshot(doc(db,"settings","goal"),snapshot=>{
-
-let data=snapshot.data()
-
-if(!data)return
-
-currentGoal=data.amount
-
-document.getElementById("goalText").innerText=
-"Goal: "+data.name+" ("+data.amount+" Berries)"
-
-updateProgress()
-
-})
+updateProgress();
+});
 
 function updateProgress(){
+if(!goal) return;
+let percent = Math.min((total/goal)*100,100);
+document.getElementById("progress").style.width = percent+"%";
+}
 
-if(!currentGoal)return
+// CONFIRM / CANCEL
+window.confirm = async function(id){
+await updateDoc(doc(db,"contributions",id),{status:"confirmed"});
+}
 
-let percent=Math.min((currentTotal/currentGoal)*100,100)
-
-document.getElementById("progress").style.width=percent+"%"
-
+window.cancel = async function(id){
+await updateDoc(doc(db,"contributions",id),{status:"cancelled"});
 }
 
 </script>
