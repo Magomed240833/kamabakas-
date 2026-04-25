@@ -28,7 +28,10 @@ border-radius:6px;
 border:none;
 }
 
-button{background:#38bdf8;cursor:pointer;}
+button{
+background:#38bdf8;
+cursor:pointer;
+}
 
 table{
 width:100%;
@@ -62,6 +65,7 @@ height:100%;
 width:0%;
 }
 </style>
+
 </head>
 
 <body>
@@ -70,6 +74,7 @@ width:0%;
 
 <h1>🏴‍☠️ Kamabaka Crew Bank</h1>
 
+<!-- CAPTAIN -->
 <div class="card">
 <h3>Captain Login</h3>
 <input type="password" id="pass" placeholder="Captain password">
@@ -77,6 +82,7 @@ width:0%;
 <p id="status">Not logged in</p>
 </div>
 
+<!-- GOAL -->
 <div class="card">
 <h3>Goal</h3>
 <input id="goalName" placeholder="Goal name">
@@ -90,6 +96,7 @@ width:0%;
 </div>
 </div>
 
+<!-- ADD -->
 <div class="card">
 <h3>Add Contribution</h3>
 <input id="name" placeholder="Name">
@@ -97,6 +104,7 @@ width:0%;
 <button onclick="addContribution()">Submit</button>
 </div>
 
+<!-- TOTAL + LEADERBOARD -->
 <div class="flex">
 
 <div class="card half">
@@ -116,8 +124,10 @@ width:0%;
 
 </div>
 
+<!-- HISTORY -->
 <div class="card">
 <h3>History</h3>
+
 <table>
 <thead>
 <tr>
@@ -128,8 +138,10 @@ width:0%;
 <th>Action</th>
 </tr>
 </thead>
+
 <tbody id="history"></tbody>
 </table>
+
 </div>
 
 </div>
@@ -137,17 +149,23 @@ width:0%;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc } 
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import {
+getFirestore,
+collection,
+addDoc,
+onSnapshot,
+updateDoc,
+doc,
+setDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAkKD8yTdyhExoccE_p9slB2enZ-AW23-Y",
-  authDomain: "kamabaka-bank.firebaseapp.com",
-  projectId: "kamabaka-bank",
-  storageBucket: "kamabaka-bank.firebasestorage.app",
-  messagingSenderId: "880622846664",
-  appId: "1:880622846664:web:f8da8e3571a29ce2ccdbfd",
-  measurementId: "G-G91DJ0GKGT"
+apiKey: "AIzaSyAkKD8yTdyhExoccE_p9slB2enZ-AW23-Y",
+authDomain: "kamabaka-bank.firebaseapp.com",
+projectId: "kamabaka-bank",
+storageBucket: "kamabaka-bank.firebasestorage.app",
+messagingSenderId: "880622846664",
+appId: "1:880622846664:web:f8da8e3571a29ce2ccdbfd"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -157,9 +175,11 @@ let captain = false;
 let total = 0;
 let goal = 0;
 
-// CAPTAIN LOGIN
+/* ================= CAPTAIN LOGIN ================= */
+
 window.login = function(){
 const pass = document.getElementById("pass").value;
+
 if(pass === "Fgabriel"){
 captain = true;
 document.getElementById("status").innerText = "Captain logged in";
@@ -168,8 +188,10 @@ alert("Wrong password");
 }
 }
 
-// ADD CONTRIBUTION
+/* ================= ADD CONTRIBUTION ================= */
+
 window.addContribution = async function(){
+
 let name = document.getElementById("name").value;
 let amount = Number(document.getElementById("amount").value);
 
@@ -183,8 +205,10 @@ date:new Date().toLocaleString()
 });
 }
 
-// SET GOAL
+/* ================= SET GOAL ================= */
+
 window.setGoal = async function(){
+
 if(!captain) return alert("Captain only");
 
 await setDoc(doc(db,"settings","goal"),{
@@ -193,45 +217,60 @@ amount:Number(document.getElementById("goalAmount").value)
 });
 }
 
-// CONTRIBUTIONS REALTIME
+/* ================= REALTIME CONTRIBUTIONS ================= */
+
 onSnapshot(collection(db,"contributions"),(snap)=>{
 
 let history = document.getElementById("history");
 let board = {};
+
 history.innerHTML="";
 total = 0;
 
 snap.forEach(d=>{
 let data = d.data();
+let actions = "";
 
-let actions="";
+/* CAPTAIN ACTIONS */
+if(captain){
 
-if(captain && data.status==="pending"){
-actions=`
-<button onclick="confirm('${d.id}')">Confirm</button>
-<button onclick="cancel('${d.id}')">Cancel</button>
+actions += `
+<button onclick="confirmContribution('${d.id}')">Confirm</button>
+<button onclick="cancelContribution('${d.id}')">Cancel</button>
+<button onclick="deleteContribution('${d.id}')">Delete</button>
 `;
 }
 
-if(data.status==="confirmed"){
+/* COUNT ONLY CONFIRMED */
+if(data.status === "confirmed"){
 total += data.amount;
-board[data.name]=(board[data.name]||0)+data.amount;
+board[data.name] = (board[data.name] || 0) + data.amount;
+}
+
+/* HISTORY ROW */
+let style = "";
+if(data.status === "deleted"){
+style = "style='opacity:0.4;text-decoration:line-through'";
 }
 
 history.innerHTML += `
-<tr>
+<tr ${style}>
 <td>${data.name}</td>
 <td>${data.amount}</td>
 <td>${data.status}</td>
 <td>${data.date}</td>
 <td>${actions}</td>
-</tr>`;
+</tr>
+`;
+
 });
 
+/* TOTAL */
 document.getElementById("total").innerText = total;
 
-let b=document.getElementById("board");
-b.innerHTML="";
+/* LEADERBOARD */
+let b = document.getElementById("board");
+b.innerHTML = "";
 
 Object.entries(board)
 .sort((a,b)=>b[1]-a[1])
@@ -240,10 +279,13 @@ b.innerHTML += `<tr><td>${p[0]}</td><td>${p[1]}</td></tr>`;
 });
 
 updateProgress();
+
 });
 
-// GOAL REALTIME
+/* ================= GOAL REALTIME ================= */
+
 onSnapshot(doc(db,"settings","goal"),(snap)=>{
+
 let data = snap.data();
 if(!data) return;
 
@@ -253,21 +295,38 @@ document.getElementById("goalText").innerText =
 data.name + " ("+data.amount+")";
 
 updateProgress();
+
 });
+
+/* ================= PROGRESS ================= */
 
 function updateProgress(){
 if(!goal) return;
 let percent = Math.min((total/goal)*100,100);
-document.getElementById("progress").style.width = percent+"%";
+document.getElementById("progress").style.width = percent + "%";
 }
 
-// CONFIRM / CANCEL
-window.confirm = async function(id){
-await updateDoc(doc(db,"contributions",id),{status:"confirmed"});
+/* ================= CAPTAIN ACTIONS ================= */
+
+window.confirmContribution = async function(id){
+if(!captain) return;
+await updateDoc(doc(db,"contributions",id),{
+status:"confirmed"
+});
 }
 
-window.cancel = async function(id){
-await updateDoc(doc(db,"contributions",id),{status:"cancelled"});
+window.cancelContribution = async function(id){
+if(!captain) return;
+await updateDoc(doc(db,"contributions",id),{
+status:"cancelled"
+});
+}
+
+window.deleteContribution = async function(id){
+if(!captain) return;
+await updateDoc(doc(db,"contributions",id),{
+status:"deleted"
+});
 }
 
 </script>
