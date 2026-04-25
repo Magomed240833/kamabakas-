@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kamabaka Crew Bank</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:40px;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+}
+
+input,button{
+padding:10px;
+margin:5px;
+border-radius:6px;
+border:none;
+}
+
+button{
+background:#38bdf8;
+cursor:pointer;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #334155;
+}
+
+.progressbar{
+background:#334155;
+height:25px;
+border-radius:20px;
+overflow:hidden;
+}
+
+.progress{
+background:#22c55e;
+height:100%;
+width:0%;
+}
+
+.flex{
+display:flex;
+gap:20px;
+}
+
+.half{
+flex:1;
+}
+
+.metric{
+font-size:40px;
+font-weight:bold;
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🏴‍☠️ Kamabaka Crew Bank</h1>
+
+<div class="card">
+
+<h2>Captain Panel</h2>
+
+<input type="password" id="captainPassword" placeholder="Captain password">
+
+<button onclick="loginCaptain()">Login</button>
+
+<p id="captainStatus">Not logged in</p>
+
+</div>
+
+<div class="card">
+
+<h2>Goal</h2>
+
+<input id="goalName" placeholder="Goal name">
+<input id="goalAmount" type="number" placeholder="Goal amount">
+
+<button onclick="setGoal()">Set Goal</button>
+
+<p id="goalText"></p>
+
+<div class="progressbar">
+<div class="progress" id="progress"></div>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Add Contribution</h2>
+
+<input id="name" placeholder="Crew member name">
+<input id="amount" type="number" placeholder="Amount">
+
+<button onclick="addContribution()">Submit</button>
+
+</div>
+
+<div class="flex">
+
+<div class="card half">
+<h2>Total Crew Bank</h2>
+<div class="metric" id="total">0 Berries</div>
+</div>
+
+<div class="card half">
+
+<h2>Crew Leaderboard</h2>
+
+<table>
+<thead>
+<tr>
+<th>Player</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody id="leaderboard"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Contribution History</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Name</th>
+<th>Amount</th>
+<th>Date</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="history"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "YOUR_KEY",
+authDomain: "YOUR_PROJECT.firebaseapp.com",
+projectId: "YOUR_PROJECT",
+storageBucket: "YOUR_PROJECT.appspot.com",
+messagingSenderId: "XXXX",
+appId: "XXXX"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let captain=false
+
+window.loginCaptain=function(){
+
+const password=document.getElementById("captainPassword").value
+
+if(password==="Fgabriel"){
+captain=true
+document.getElementById("captainStatus").innerText="Captain logged in"
+}else{
+alert("Wrong password")
+}
+
+}
+
+window.addContribution=async function(){
+
+let name=document.getElementById("name").value
+let amount=Number(document.getElementById("amount").value)
+
+if(!name || !amount)return
+
+await addDoc(collection(db,"contributions"),{
+
+name:name,
+amount:amount,
+date:new Date().toLocaleString(),
+status:"pending"
+
+})
+
+}
+
+window.confirmContribution=async function(id){
+
+if(!captain)return alert("Captain only")
+
+await updateDoc(doc(db,"contributions",id),{
+status:"confirmed"
+})
+
+}
+
+window.cancelContribution=async function(id){
+
+if(!captain)return alert("Captain only")
+
+await updateDoc(doc(db,"contributions",id),{
+status:"cancelled"
+})
+
+}
+
+window.setGoal=async function(){
+
+if(!captain)return alert("Captain only")
+
+let name=document.getElementById("goalName").value
+let amount=Number(document.getElementById("goalAmount").value)
+
+await setDoc(doc(db,"settings","goal"),{
+name:name,
+amount:amount
+})
+
+}
+
+let currentTotal=0
+let currentGoal=0
+
+onSnapshot(collection(db,"contributions"),snapshot=>{
+
+let history=document.getElementById("history")
+history.innerHTML=""
+
+let leaderboard={}
+let total=0
+
+snapshot.forEach(document=>{
+
+let data=document.data()
+let id=document.id
+
+if(data.status==="confirmed"){
+
+total+=data.amount
+
+if(!leaderboard[data.name])leaderboard[data.name]=0
+leaderboard[data.name]+=data.amount
+
+}
+
+let row=document.createElement("tr")
+
+let actions=""
+
+if(captain && data.status==="pending"){
+
+actions=`
+<button onclick="confirmContribution('${id}')">Confirm</button>
+<button onclick="cancelContribution('${id}')">Cancel</button>
+`
+
+}
+
+row.innerHTML=`
+<td>${data.name}</td>
+<td>${data.amount}</td>
+<td>${data.date}</td>
+<td>${data.status}</td>
+<td>${actions}</td>
+`
+
+history.appendChild(row)
+
+})
+
+currentTotal=total
+
+document.getElementById("total").innerText=total+" Berries"
+
+let lb=document.getElementById("leaderboard")
+lb.innerHTML=""
+
+Object.entries(leaderboard)
+.sort((a,b)=>b[1]-a[1])
+.forEach(player=>{
+
+let row=document.createElement("tr")
+
+row.innerHTML=`
+<td>${player[0]}</td>
+<td>${player[1]}</td>
+`
+
+lb.appendChild(row)
+
+})
+
+updateProgress()
+
+})
+
+onSnapshot(doc(db,"settings","goal"),snapshot=>{
+
+let data=snapshot.data()
+
+if(!data)return
+
+currentGoal=data.amount
+
+document.getElementById("goalText").innerText=
+"Goal: "+data.name+" ("+data.amount+" Berries)"
+
+updateProgress()
+
+})
+
+function updateProgress(){
+
+if(!currentGoal)return
+
+let percent=Math.min((currentTotal/currentGoal)*100,100)
+
+document.getElementById("progress").style.width=percent+"%"
+
+}
+
+</script>
+
+</body>
+</html>
